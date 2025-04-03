@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Дневник Эмоций</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Мой дневник</h1>
+
+        <div class="mood-selector">
+            <h3>Какое у тебя настроение?</h3>
+            <div class="moods">
+                <button onclick="logMood('happy')">😊 Радость</button>
+                <button onclick="logMood('neutral')">😐 Нормально</button>
+                <button onclick="logMood('sad')">😢 Грусть</button>
+            </div>
+        </div>
+
+        <div class="notes">
+            <h3>Заметка (необязательно)</h3>
+            <textarea id="note" placeholder="Опиши свои чувства..."></textarea>
+        </div>
+
+        <div class="history">
+            <h3>История</h3>
+            <div id="mood-history"></div>
+        </div>
+    </div>
+
+    <script>
+        const tg = Telegram.WebApp;
+        tg.expand();
+        tg.MainButton.setText("Сохранить").show().onClick(saveData);
+
+        function logMood(mood) {
+            tg.MainButton.show();
+            currentMood = mood;
+        }
+
+        function saveData() {
+            const note = document.getElementById('note').value;
+
+            tg.sendData(JSON.stringify({
+                user_id: tg.initDataUnsafe.user.id,
+                mood: currentMood,
+                note: note
+            }));
+
+            tg.close();
+        }
+
+        // Загрузка истории
+        fetch(`/api/get_moods?user_id=${tg.initDataUnsafe.user.id}`)
+            .then(res => res.json())
+            .then(data => {
+                const history = document.getElementById('mood-history');
+                history.innerHTML = data.map(item => `
+                    <div class="entry">
+                        <span class="date">${new Date(item.date).toLocaleDateString()}</span>
+                        <span class="mood ${item.mood}"></span>
+                        <p>${item.note || ''}</p>
+                    </div>
+                `).join('');
+            });
+    </script>
+</body>
+</html>
