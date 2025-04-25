@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Дневник Эмоций</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник Эмоций</title>
+    <style>
+
+        :root {
+            --color-light: #f2f4ff;
+            --color-medium: #bcdaeb;
+            --color-accent: #9cc4d4;
+            --color-dark: #605c63;
+            --color-text: #333333;
+            --color-white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--color-light);
+            color: var(--color-text);
+            line-height: 1.6;
+            padding-bottom: 70px; /* Для нижнего меню */
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Начальная страница */
+        .welcome-screen {
+            text-align: center;
+            padding: 40px 20px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: var(--color-dark);
+        }
+
+        .app-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--color-dark);
+        }
+
+        .app-description {
+            color: var(--color-dark);
+            margin-bottom: 30px;
+            max-width: 400px;
+        }
+
+        .start-button {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .start-button:hover {
+            background-color: var(--color-dark);
+        }
+
+        /* Навигационное меню */
+        .nav-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--color-dark);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .nav-item.active {
+            background-color: var(--color-accent);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .nav-text {
+            font-size: 0.8rem;
+        }
+
+        /* Контент страниц */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Страница новой записи */
+        .section {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            color: var(--color-dark);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title .icon {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+
+        /* Трекер настроения */
+        .mood-options {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .mood-option {
+            flex: 1;
+            margin: 0 5px;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: var(--color-medium);
+        }
+
+        .mood-option.selected {
+            background-color: var(--color-dark);
+            color: var(--color-white);
+        }
+
+        .mood-option .emoji {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        /* Шкалы */
+        .scale-container {
+            margin: 20px 0;
+        }
+
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--color-dark);
+        }
+
+        .scale-points {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .scale-point {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--color-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .scale-point.selected {
+            background-color: var(--color-dark);
+            color: var(--color-white);
+        }
+
+        /* События */
+        .events-list {
+            list-style: none;
+        }
+
+        .event-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background-color: var(--color-medium);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .event-item:hover {
+            background-color: var(--color-accent);
+        }
+
+        .event-checkbox {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .add-event {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            color: var(--color-dark);
+            cursor: pointer;
+        }
+
+        .add-event .icon {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+
+        /* Эмоции */
+        .emotion-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .emotion-cell {
+            padding: 10px;
+            text-align: center;
+            background-color: var(--color-medium);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .emotion-cell.selected {
+            background-color: var(--color-dark);
+            color: var(--color-white);
+        }
+
+        .add-emotion {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            color: var(--color-dark);
+            cursor: pointer;
+        }
+
+        .add-emotion .icon {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+
+        /* Заметки */
+        .notes-textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--color-medium);
+            border-radius: 10px;
+            min-height: 150px;
+            resize: vertical;
+            font-size: 1rem;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        /* График */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .timeline-date {
+            width: 80px;
+            font-weight: bold;
+            color: var(--color-dark);
+        }
+
+        .timeline-mood {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 15px;
+            font-size: 1.5rem;
+        }
+
+        .timeline-details {
+            flex: 1;
+            background-color: var(--color-white);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .save-button {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            margin: 30px auto;
+            width: 200px;
+            text-align: center;
+        }
+
+        .save-button:hover {
+            background-color: var(--color-dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- Стартовый экран -->
+    <div id="welcome-screen" class="welcome-screen">
+        <div class="app-logo">
+            <img src="img/basket.jpg" alt="Логотип Корзинка">
+        </div>
+        <h1 class="app-title">Корзинка</h1>
+        <p class="app-description">
+            Отслеживайте свое настроение, эмоции и события дня.<br>
+            Анализируйте свои состояния и улучшайте эмоциональное благополучие.
+        </p>
+        <button class="start-button" onclick="startApp()">Начать</button>
+    </div>
+
+
+    <!-- Главная страница -->
+    <div id="main-page" class="page">
+        <div class="container">
+            <div class="section">
+                <h2 class="section-title"><span class="icon">📝</span> Новая запись</h2>
+                <p>Создайте новую запись о вашем состоянии сегодня.</p>
+                <button class="save-button" onclick="showPage('new-entry-page')">+ Новая запись</button>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title"><span class="icon">📊</span> Последние записи</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">Сегодня</div>
+                        <div class="timeline-mood" style="background-color: #bcdaeb;">😊</div>
+                        <div class="timeline-details">
+                            <strong>Хорошее настроение</strong>
+                            <p>Прогулялся в парке, встретился с друзьями</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Вчера</div>
+                        <div class="timeline-mood" style="background-color: #9cc4d4;">😐</div>
+                        <div class="timeline-details">
+                            <strong>Нормальное настроение</strong>
+                            <p>Рабочий день, немного устал</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Страница новой записи -->
+    <div id="new-entry-page" class="page">
+        <div class="container">
+            <div class="section">
+                <h2 class="section-title"><span class="icon">😊</span> Настроение и энергия</h2>
+
+                <div class="mood-options">
+                    <div class="mood-option" onclick="selectMood(this, 'happy')">
+                        <div class="emoji">😊</div>
+                        Хорошее
+                    </div>
+                    <div class="mood-option" onclick="selectMood(this, 'neutral')">
+                        <div class="emoji">😐</div>
+                        Нормальное
+                    </div>
+                    <div class="mood-option" onclick="selectMood(this, 'sad')">
+                        <div class="emoji">😢</div>
+                        Плохое
+                    </div>
+                </div>
+
+                <h3>Уровень энергии</h3>
+                <div class="scale-container">
+                    <div class="scale-labels">
+                        <span>Низкий</span>
+                        <span>Высокий</span>
+                    </div>
+                    <div class="scale-points">
+                        <div class="scale-point" onclick="selectScalePoint(this, 1)">1</div>
+                        <div class="scale-point" onclick="selectScalePoint(this, 2)">2</div>
+                        <div class="scale-point" onclick="selectScalePoint(this, 3)">3</div>
+                        <div class="scale-point" onclick="selectScalePoint(this, 4)">4</div>
+                        <div class="scale-point" onclick="selectScalePoint(this, 5)">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title"><span class="icon">📅</span> События дня</h2>
+                <ul class="events-list">
+                    <li class="event-item">
+                        <input type="checkbox" class="event-checkbox">
+                        Встреча с друзьями
+                    </li>
+                    <li class="event-item">
+                        <input type="checkbox" class="event-checkbox">
+                        Учёба/Работа
+                    </li>
+                    <li class="event-item">
+                        <input type="checkbox" class="event-checkbox">
+                        Спорт
+                    </li>
+                    <li class="event-item">
+                        <input type="checkbox" class="event-checkbox">
+                        Отдых
+                    </li>
+                    <div class="add-event" onclick="addCustomEvent()">
+                        <span class="icon">+</span>
+                        Добавить своё событие
+                    </div>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title"><span class="icon">💭</span> Эмоции</h2>
+
+                <h3>Уровень стресса</h3>
+                <div class="scale-container">
+                    <div class="scale-points">
+                        <div class="scale-point" onclick="selectStressLevel(this, 'low')">Низкий</div>
+                        <div class="scale-point" onclick="selectStressLevel(this, 'medium')">Средний</div>
+                        <div class="scale-point" onclick="selectStressLevel(this, 'high')">Высокий</div>
+                    </div>
+                </div>
+
+                <h3>Базовые эмоции</h3>
+                <div class="emotion-grid">
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Безысходность</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Радость</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Восторг</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Тревога</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Страх</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Ужас</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Раздражение</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Злость</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Ярость</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Печаль</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Грусть</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Горе</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Стеснение</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Смущение</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Стыд</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Удивление</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Изумление</div>
+                    <div class="emotion-cell" onclick="selectEmotion(this)">Спокойствие</div>
+                </div>
+
+                <div class="add-emotion" onclick="addCustomEmotion()">
+                    <span class="icon">+</span>
+                    Добавить свою эмоцию
+                </div>
+
+                <h3>Отношение к людям</h3>
+                <div class="scale-points">
+                    <div class="scale-point" onclick="selectPeopleAttitude(this, 'dislike')">Неприязнь</div>
+                    <div class="scale-point" onclick="selectPeopleAttitude(this, 'neutral')">Нейтральное</div>
+                    <div class="scale-point" onclick="selectPeopleAttitude(this, 'like')">Симпатия</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title"><span class="icon">📝</span> Заметки</h2>
+                <textarea class="notes-textarea" placeholder="Опишите свои мысли и чувства... Что вызвало такие эмоции?"></textarea>
+            </div>
+
+            <button class="save-button" onclick="saveEntry()">Сохранить запись</button>
+        </div>
+    </div>
+
+    <!-- Страница заметок -->
+    <div id="notes-page" class="page">
+        <div class="container">
+            <div class="section">
+                <h2 class="section-title"><span class="icon">📚</span> Все заметки</h2>
+                <p>Здесь будут отображаться все ваши сохранённые заметки.</p>
+                <!-- Здесь можно добавить список заметок -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Страница графика -->
+    <div id="stats-page" class="page">
+        <div class="container">
+            <div class="section">
+                <h2 class="section-title"><span class="icon">📊</span> График настроения</h2>
+                <p>Здесь будет отображаться график вашего настроения за выбранный период.</p>
+                <!-- Здесь можно добавить график -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижнее меню навигации -->
+    <div class="nav-menu">
+        <a href="#" class="nav-item active" onclick="showPage('main-page')">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">Главная</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('new-entry-page')">
+            <span class="nav-icon">✏️</span>
+            <span class="nav-text">Новая запись</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('notes-page')">
+            <span class="nav-icon">📔</span>
+            <span class="nav-text">Заметки</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('stats-page')">
+            <span class="nav-icon">📈</span>
+            <span class="nav-text">График</span>
+        </a>
+    </div>
+
+    <script>
+        // Текущие данные записи
+        let currentEntry = {
+            mood: null,
+            energy: null,
+            events: [],
+            stressLevel: null,
+            emotions: [],
+            peopleAttitude: null,
+            notes: ''
+        };
+
+        // Показать страницу
+        function showPage(pageId) {
+            // Скрыть все страницы
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // Показать выбранную страницу
+            document.getElementById(pageId).classList.add('active');
+
+            // Обновить активный пункт меню
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Для страницы новой записи активируем главную в меню
+            if (pageId === 'new-entry-page') {
+                document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+            } else {
+                const navItems = document.querySelectorAll('.nav-item');
+                for (let i = 0; i < navItems.length; i++) {
+                    if (navItems[i].textContent.includes(
+                        pageId === 'main-page' ? 'Главная' :
+                        pageId === 'notes-page' ? 'Заметки' :
+                        pageId === 'stats-page' ? 'График' : ''
+                    )) {
+                        navItems[i].classList.add('active');
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Выбор настроения
+        function selectMood(element, mood) {
+            document.querySelectorAll('.mood-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            currentEntry.mood = mood;
+        }
+
+        // Выбор уровня энергии
+        function selectScalePoint(element, level) {
+            document.querySelectorAll('#energy-scale .scale-point').forEach(point => {
+                point.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            currentEntry.energy = level;
+        }
+
+        // Выбор уровня стресса
+        function selectStressLevel(element, level) {
+            document.querySelectorAll('#stress-scale .scale-point').forEach(point => {
+                point.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            currentEntry.stressLevel = level;
+        }
+
+        // Выбор эмоции
+        function selectEmotion(element) {
+            element.classList.toggle('selected');
+            const emotion = element.textContent;
+
+            if (element.classList.contains('selected')) {
+                if (!currentEntry.emotions.includes(emotion)) {
+                    currentEntry.emotions.push(emotion);
+                }
+            } else {
+                currentEntry.emotions = currentEntry.emotions.filter(e => e !== emotion);
+            }
+        }
+
+        // Выбор отношения к людям
+        function selectPeopleAttitude(element, attitude) {
+            document.querySelectorAll('#people-scale .scale-point').forEach(point => {
+                point.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            currentEntry.peopleAttitude = attitude;
+        }
+
+        // Добавить свое событие
+        function addCustomEvent() {
+            const eventName = prompt('Введите название события:');
+            if (eventName && eventName.trim() !== '') {
+                const eventsList = document.querySelector('.events-list');
+                const newEvent = document.createElement('li');
+                newEvent.className = 'event-item';
+                newEvent.innerHTML = `
+                    <input type="checkbox" class="event-checkbox">
+                    ${eventName.trim()}
+                `;
+                eventsList.insertBefore(newEvent, eventsList.lastElementChild);
+            }
+        }
+
+        // Добавить свою эмоцию
+        function addCustomEmotion() {
+            const emotionName = prompt('Введите название эмоции:');
+            if (emotionName && emotionName.trim() !== '') {
+                const emotionGrid = document.querySelector('.emotion-grid');
+                const newEmotion = document.createElement('div');
+                newEmotion.className = 'emotion-cell';
+                newEmotion.textContent = emotionName.trim();
+                newEmotion.onclick = function() { selectEmotion(this); };
+                emotionGrid.appendChild(newEmotion);
+            }
+        }
+
+        // Сохранить запись
+        function saveEntry() {
+            // Получаем выбранные события
+            currentEntry.events = [];
+            document.querySelectorAll('.event-item input:checked').forEach(checkbox => {
+                currentEntry.events.push(checkbox.parentElement.textContent.trim());
+            });
+
+            // Получаем заметки
+            currentEntry.notes = document.querySelector('.notes-textarea').value;
+
+            // Здесь можно добавить код для сохранения данных (например, в localStorage или на сервер)
+            console.log('Сохраненная запись:', currentEntry);
+            alert('Запись сохранена!');
+
+            // Возвращаемся на главную страницу
+            showPage('main-page');
+
+            // Сбрасываем форму
+            resetForm();
+        }
+
+        // Сброс формы
+        function resetForm() {
+            currentEntry = {
+                mood: null,
+                energy: null,
+                events: [],
+                stressLevel: null,
+                emotions: [],
+                peopleAttitude: null,
+                notes: ''
+            };
+
+            // Сброс UI
+            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.event-checkbox').forEach(cb => cb.checked = false);
+            document.querySelector('.notes-textarea').value = '';
+        }
+    </script>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</body>
+</html>

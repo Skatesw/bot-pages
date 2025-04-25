@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корзинка - Дневник эмоций</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --color-light: #f2f4ff;
+            --color-medium: #bcdaeb;
+            --color-accent: #9cc4d4;
+            --color-dark: #605c63;
+            --color-text: #333333;
+            --color-white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--color-light);
+            color: var(--color-text);
+            padding-bottom: 80px;
+            line-height: 1.6;
+        }
+
+        /* Стартовый экран */
+        .welcome-screen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .app-logo img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 20px;
+            background-color: var(--color-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .app-title {
+            font-size: 2rem;
+            color: var(--color-dark);
+            margin-bottom: 15px;
+        }
+
+        .app-description {
+            color: var(--color-dark);
+            margin-bottom: 30px;
+            max-width: 400px;
+        }
+
+        .start-button {
+            background-color: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .start-button:hover {
+            background-color: var(--color-dark);
+        }
+
+        /* Основное приложение */
+        #main-app {
+            display: none;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Карточки */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: none;
+        }
+
+        .card-title {
+            color: var(--color-dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Кнопки */
+        .btn-primary {
+            background-color: var(--color-accent);
+            border: none;
+            border-radius: 30px;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-dark);
+        }
+
+        /* Ползунки */
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: var(--color-medium);
+            outline: none;
+            margin: 15px 0;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: var(--color-dark);
+            cursor: pointer;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: var(--color-dark);
+        }
+
+        /* События */
+        .event-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: var(--color-medium);
+            border-radius: 8px;
+        }
+
+        .event-checkbox {
+            margin-right: 10px;
+        }
+
+        .add-event {
+            display: flex;
+            align-items: center;
+            color: var(--color-dark);
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Эмоции */
+        .emotion-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .emotion-tag {
+            padding: 8px;
+            text-align: center;
+            background-color: var(--color-medium);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .emotion-tag.selected {
+            background-color: var(--color-dark);
+            color: white;
+        }
+
+        /* Заметки */
+        .notes-textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--color-medium);
+            border-radius: 10px;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Навигация */
+        .nav-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--color-dark);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .nav-item.active {
+            background-color: var(--color-accent);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .nav-text {
+            font-size: 0.8rem;
+        }
+
+        /* Страницы */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Периоды для графика */
+        .period-selector {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+
+        .period-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: var(--color-medium);
+            border: none;
+            cursor: pointer;
+        }
+
+        .period-btn.active {
+            background: var(--color-dark);
+            color: white;
+        }
+
+        /* Анализ данных */
+        .analysis-card {
+            margin-top: 20px;
+        }
+
+        .analysis-result {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        /* Телеграм-специфичные стили */
+        .tg-header {
+            background-color: var(--color-dark);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .tg-header h1 {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .tg-close-btn {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Стартовый экран -->
+    <div id="welcome-screen" class="welcome-screen">
+        <div class="app-logo">
+            <img src="img/basket.jpg" alt="Логотип Корзинка" onerror="this.onerror=null; this.innerHTML='🧺'; this.style.display='flex'; this.style.alignItems='center'; this.style.justifyContent='center';">
+        </div>
+        <h1 class="app-title">Корзинка</h1>
+        <p class="app-description">
+            Отслеживайте свое настроение, эмоции и события дня.<br>
+            Анализируйте свои состояния и улучшайте эмоциональное благополучие.
+        </p>
+        <button class="start-button" onclick="startApp()">Начать</button>
+    </div>
+
+    <!-- Основное приложение -->
+    <div id="main-app">
+        <!-- Телеграм шапка -->
+
+
+        <div class="container">
+
+            <!-- Главная страница -->
+            <div id="main-page" class="page active">
+                <div class="card">
+                    <h3> Новая запись</h3>
+                    <p>Добавьте запись о вашем состоянии</p>
+                    <button class="btn btn-primary w-100" onclick="showPage('new-entry-page')">
+                        ✏️ Добавить запись
+                    </button>
+                </div>
+
+                <div class="card">
+                    <h3>📆 Последние записи</h3>
+                    <div id="recent-entries">
+                        <p>У вас пока нет записей. Создайте первую!</p>
+                    </div>
+                </div>
+
+                <div class="card analysis-card">
+                    <h3>🧠 Анализ вашего состояния</h3>
+                    <p>Получите персональные рекомендации на основе ваших записей</p>
+                    <button class="btn btn-primary w-100" onclick="analyzeData()">
+                        Проанализировать
+                    </button>
+                    <div id="analysis-result" class="analysis-result" style="display: none;">
+                        <h5>Рекомендации:</h5>
+                        <p id="ai-advice-text"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Страница новой записи -->
+            <div id="new-entry-page" class="page">
+                <div class="card">
+                    <h3 class="card-title"><span class="icon">😊</span> Настроение</h3>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="50" class="slider" id="mood-slider">
+                        <div class="slider-labels">
+                            <span>😢 Плохое</span>
+                            <span>😐 Нормальное</span>
+                            <span>😊 Хорошее</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="icon">⚡</span> Энергия</h3>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="50" class="slider" id="energy-slider">
+                        <div class="slider-labels">
+                            <span>😴 Низкий</span>
+                            <span>😌 Средний</span>
+                            <span>💪 Высокий</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="icon">📅</span> События дня</h3>
+                    <div id="events-list">
+                        <div class="event-item">
+                            <input type="checkbox" class="event-checkbox" id="event-1">
+                            <label for="event-1">Встреча с друзьями</label>
+                        </div>
+                        <div class="event-item">
+                            <input type="checkbox" class="event-checkbox" id="event-2">
+                            <label for="event-2">Учёба/Работа</label>
+                        </div>
+                        <div class="event-item">
+                            <input type="checkbox" class="event-checkbox" id="event-3">
+                            <label for="event-3">Спорт</label>
+                        </div>
+                        <div class="event-item">
+                            <input type="checkbox" class="event-checkbox" id="event-4">
+                            <label for="event-4">Отдых</label>
+                        </div>
+                    </div>
+                    <div class="add-event" onclick="addCustomEvent()">
+                        <span class="icon">+</span>
+                        <span>Добавить своё событие</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="icon">💭</span> Эмоции</h3>
+                    <h4>Уровень стресса</h4>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="30" class="slider" id="stress-slider">
+                        <div class="slider-labels">
+                            <span>😌 Низкий</span>
+                            <span>😐 Средний</span>
+                            <span>😫 Высокий</span>
+                        </div>
+                    </div>
+
+                    <h4>Базовые эмоции</h4>
+                    <div class="emotion-grid" id="emotions-grid">
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Радость</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Грусть</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Злость</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Страх</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Удивление</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Спокойствие</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Тревога</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Вдохновение</div>
+                        <div class="emotion-tag" onclick="toggleEmotion(this)">Усталость</div>
+                    </div>
+                    <div class="add-event" onclick="addCustomEmotion()">
+                        <span class="icon">+</span>
+                        <span>Добавить свою эмоцию</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="icon">📝</span> Заметки</h3>
+                    <textarea class="notes-textarea" id="notes-text" placeholder="Опишите свои мысли и чувства..."></textarea>
+                </div>
+
+                <button class="btn btn-primary w-100 mb-3" onclick="saveEntry()">Сохранить запись</button>
+                <button class="btn btn-outline-secondary w-100" onclick="showPage('main-page')">Отмена</button>
+            </div>
+
+            <!-- Страница заметок -->
+            <div id="notes-page" class="page">
+                <div class="card">
+                    <h3>📝 Мои заметки</h3>
+                    <textarea class="notes-textarea" id="general-notes" placeholder="Запишите свои мысли..."></textarea>
+                    <button class="btn btn-primary w-100 mt-3" onclick="saveGeneralNotes()">Сохранить</button>
+                </div>
+            </div>
+
+            <!-- Страница графика -->
+            <div id="stats-page" class="page">
+                <div class="card">
+                    <h3>📈 График настроения</h3>
+                    <div class="period-selector">
+                        <button class="period-btn active" onclick="changePeriod('day', this)">День</button>
+                        <button class="period-btn" onclick="changePeriod('week', this)">Неделя</button>
+                        <button class="period-btn" onclick="changePeriod('month', this)">Месяц</button>
+                    </div>
+                    <canvas id="mood-chart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Нижнее меню -->
+        <div class="nav-menu">
+            <a href="#" class="nav-item active" onclick="showPage('main-page')">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Главная</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showPage('notes-page')">
+                <span class="nav-icon">📝</span>
+                <span class="nav-text">Заметки</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showPage('stats-page')">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">График</span>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Текущие данные записи
+        let currentEntry = {
+            mood: 50,
+            energy: 50,
+            events: [],
+            stress: 30,
+            emotions: [],
+            notes: '',
+            date: new Date()
+        };
+
+        // Общие заметки
+        let generalNotes = '';
+
+        // Записи в истории
+        let entries = [];
+
+        // Текущий период для графика
+        let currentPeriod = 'day';
+        let moodChart = null;
+
+        // Запуск приложения
+        function startApp() {
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+
+            // Инициализация Telegram WebApp
+            const tg = window.Telegram.WebApp;
+            if (tg) {
+                tg.expand();
+                tg.enableClosingConfirmation();
+            }
+
+            // Загрузка сохраненных данных
+            loadData();
+        }
+
+        // Показать страницу
+        function showPage(pageId) {
+            // Скрыть все страницы
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // Показать выбранную страницу
+            document.getElementById(pageId).classList.add('active');
+
+            // Обновить активный пункт меню
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Для страниц без меню активируем главную
+            if (pageId === 'new-entry-page') {
+                document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+            } else {
+                const navItems = document.querySelectorAll('.nav-item');
+                for (let i = 0; i < navItems.length; i++) {
+                    if (navItems[i].textContent.includes(
+                        pageId === 'main-page' ? 'Главная' :
+                        pageId === 'notes-page' ? 'Заметки' :
+                        pageId === 'stats-page' ? 'График' : ''
+                    )) {
+                        navItems[i].classList.add('active');
+                        break;
+                    }
+                }
+            }
+
+            // Если открываем страницу статистики - обновляем график
+            if (pageId === 'stats-page') {
+                updateChart();
+            }
+        }
+
+        // Обновление значений ползунков
+        document.getElementById('mood-slider').addEventListener('input', function() {
+            currentEntry.mood = this.value;
+        });
+
+        document.getElementById('energy-slider').addEventListener('input', function() {
+            currentEntry.energy = this.value;
+        });
+
+        document.getElementById('stress-slider').addEventListener('input', function() {
+            currentEntry.stress = this.value;
+        });
+
+        // Добавить свое событие
+        function addCustomEvent() {
+            const eventName = prompt('Введите название события:');
+            if (eventName && eventName.trim() !== '') {
+                const eventsList = document.getElementById('events-list');
+                const eventId = 'event-' + (eventsList.children.length + 1);
+
+                const newEvent = document.createElement('div');
+                newEvent.className = 'event-item';
+                newEvent.innerHTML = `
+                    <input type="checkbox" class="event-checkbox" id="${eventId}">
+                    <label for="${eventId}">${eventName.trim()}</label>
+                `;
+
+                eventsList.appendChild(newEvent);
+            }
+        }
+
+        // Выбор эмоции
+        function toggleEmotion(element) {
+            element.classList.toggle('selected');
+            const emotion = element.textContent;
+
+            if (element.classList.contains('selected')) {
+                if (!currentEntry.emotions.includes(emotion)) {
+                    currentEntry.emotions.push(emotion);
+                }
+            } else {
+                currentEntry.emotions = currentEntry.emotions.filter(e => e !== emotion);
+            }
+        }
+
+        // Добавить свою эмоцию
+        function addCustomEmotion() {
+            const emotionName = prompt('Введите название эмоции:');
+            if (emotionName && emotionName.trim() !== '') {
+                const emotionsGrid = document.getElementById('emotions-grid');
+                const newEmotion = document.createElement('div');
+                newEmotion.className = 'emotion-tag';
+                newEmotion.textContent = emotionName.trim();
+                newEmotion.onclick = function() { toggleEmotion(this); };
+                emotionsGrid.appendChild(newEmotion);
+            }
+        }
+
+        // Сохранить запись
+        function saveEntry() {
+            // Получаем выбранные события
+            currentEntry.events = [];
+            document.querySelectorAll('#events-list .event-checkbox:checked').forEach(checkbox => {
+                currentEntry.events.push(checkbox.nextElementSibling.textContent.trim());
+            });
+
+            // Получаем заметки
+            currentEntry.notes = document.getElementById('notes-text').value;
+            currentEntry.date = new Date();
+
+            // Добавляем в историю
+            entries.push({...currentEntry});
+            saveData();
+
+            // Показываем уведомление
+            alert('Запись сохранена!');
+
+            // Возвращаемся на главную
+            showPage('main-page');
+            updateHistory();
+
+            // Сбрасываем форму
+            resetForm();
+        }
+
+        // Сохранить общие заметки
+        function saveGeneralNotes() {
+            generalNotes = document.getElementById('general-notes').value;
+            localStorage.setItem('emotionDiaryGeneralNotes', generalNotes);
+            alert('Заметки сохранены!');
+        }
+
+        // Сброс формы
+        function resetForm() {
+            currentEntry = {
+                mood: 50,
+                energy: 50,
+                events: [],
+                stress: 30,
+                emotions: [],
+                notes: '',
+                date: new Date()
+            };
+
+            // Сброс UI
+            document.getElementById('mood-slider').value = 50;
+            document.getElementById('energy-slider').value = 50;
+            document.getElementById('stress-slider').value = 30;
+            document.getElementById('notes-text').value = '';
+            document.querySelectorAll('.event-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.emotion-tag.selected').forEach(el => el.classList.remove('selected'));
+        }
+
+        // Сохранение данных
+        function saveData() {
+            localStorage.setItem('emotionDiaryEntries', JSON.stringify(entries));
+            localStorage.setItem('emotionDiaryGeneralNotes', generalNotes);
+        }
+
+        // Загрузка данных
+        function loadData() {
+            const savedEntries = localStorage.getItem('emotionDiaryEntries');
+            if (savedEntries) {
+                entries = JSON.parse(savedEntries);
+                updateHistory();
+            }
+
+            const savedNotes = localStorage.getItem('emotionDiaryGeneralNotes');
+            if (savedNotes) {
+                generalNotes = savedNotes;
+                document.getElementById('general-notes').value = generalNotes;
+            }
+        }
+
+        // Обновление истории
+        function updateHistory() {
+            const recentEntries = document.getElementById('recent-entries');
+
+            if (entries.length === 0) {
+                recentEntries.innerHTML = '<p>У вас пока нет записей. Создайте первую!</p>';
+                return;
+            }
+
+            // Сортируем записи по дате (новые сначала)
+            const sortedEntries = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            recentEntries.innerHTML = sortedEntries.slice(0, 5).map((entry, index) => `
+                <div class="card mb-2">
+                    <div class="d-flex justify-content-between">
+                        ${formatDate(entry.date)}
+                        <div>
+                            <span>${getMoodEmoji(entry.mood)}</span>
+                            <span>⚡ ${entry.energy}</span>
+                        </div>
+                    </div>
+                    <p class="mt-2">${entry.notes.substring(0, 50)}${entry.notes.length > 50 ? '...' : ''}</p>
+                </div>
+            `).join('');
+        }
+
+        // Форматирование даты
+        function formatDate(date) {
+            const d = new Date(date);
+            return d.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Получить emoji для настроения
+        function getMoodEmoji(mood) {
+            if (mood > 70) return '😊';
+            if (mood > 40) return '😐';
+            return '😢';
+        }
+
+        // Изменение периода для графика
+        function changePeriod(period, btn) {
+            currentPeriod = period;
+
+            // Обновляем активную кнопку
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            btn.classList.add('active');
+
+            updateChart();
+        }
+
+        // Обновление графика
+        function updateChart() {
+            const ctx = document.getElementById('mood-chart');
+
+            // Если график уже существует - уничтожаем его
+            if (moodChart) {
+                moodChart.destroy();
+            }
+
+            if (entries.length === 0) {
+                ctx.style.display = 'none';
+                ctx.parentElement.innerHTML += `
+                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border-radius: 10px;">
+                        <p>Нет данных для построения графика</p>
+                    </div>
+                `;
+                return;
+            }
+
+            ctx.style.display = 'block';
+
+            // Сортируем записи по дате
+            const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Фильтруем записи в зависимости от периода
+            let filteredEntries = [];
+            const now = new Date();
+
+            if (currentPeriod === 'day') {
+                // Записи за последние 24 часа
+                const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                filteredEntries = sortedEntries.filter(entry => new Date(entry.date) >= yesterday);
+            } else if (currentPeriod === 'week') {
+                // Записи за последние 7 дней
+                const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                filteredEntries = sortedEntries.filter(entry => new Date(entry.date) >= lastWeek);
+            } else if (currentPeriod === 'month') {
+                // Записи за последние 30 дней
+                const lastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                filteredEntries = sortedEntries.filter(entry => new Date(entry.date) >= lastMonth);
+            }
+
+            // Если нет данных для выбранного периода
+            if (filteredEntries.length === 0) {
+                ctx.style.display = 'none';
+                ctx.parentElement.innerHTML += `
+                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border-radius: 10px;">
+                        <p>Нет данных для выбранного периода</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Подготавливаем данные для графика
+            const labels = filteredEntries.map(entry => {
+                const date = new Date(entry.date);
+                if (currentPeriod === 'day') {
+                    return date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+                } else {
+                    return date.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'});
+                }
+            });
+
+            const moodData = filteredEntries.map(entry => entry.mood);
+            const energyData = filteredEntries.map(entry => entry.energy);
+            const stressData = filteredEntries.map(entry => entry.stress);
+
+            // Создаем новый график
+            moodChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Настроение',
+                            data: moodData,
+                            borderColor: '#9cc4d4',
+                            backgroundColor: 'rgba(156, 196, 212, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Энергия',
+                            data: energyData,
+                            borderColor: '#bcdaeb',
+                            backgroundColor: 'rgba(188, 218, 235, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Стресс',
+                            data: stressData,
+                            borderColor: '#605c63',
+                            backgroundColor: 'rgba(96, 92, 99, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value === 0) return '😢';
+                                    if (value === 50) return '😐';
+                                    if (value === 100) return '😊';
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.raw;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Анализ данных с помощью "нейросети" (имитация)
+        function analyzeData() {
+            if (entries.length === 0) {
+                alert('Недостаточно данных для анализа. Сделайте несколько записей.');
+                return;
+            }
+
+            // Показываем индикатор загрузки
+            const resultDiv = document.getElementById('analysis-result');
+            resultDiv.style.display = 'block';
+            document.getElementById('ai-advice-text').textContent = 'Анализируем ваши данные...';
+
+            // Имитация работы нейросети (в реальном приложении здесь был бы запрос к API)
+            setTimeout(() => {
+                // Анализируем последние записи
+                const lastEntries = entries.slice(-5);
+                const avgMood = lastEntries.reduce((sum, entry) => sum + parseInt(entry.mood), 0) / lastEntries.length;
+                const avgEnergy = lastEntries.reduce((sum, entry) => sum + parseInt(entry.energy), 0) / lastEntries.length;
+                const avgStress = lastEntries.reduce((sum, entry) => sum + parseInt(entry.stress), 0) / lastEntries.length;
+
+                // Формируем рекомендации
+                let advice = '';
+
+                if (avgMood < 40) {
+                    advice += 'Ваше настроение в последнее время ниже среднего. ';
+                    if (avgStress > 60) {
+                        advice += 'Высокий уровень стресса может быть причиной. Попробуйте техники релаксации или медитации. ';
+                    }
+                    if (lastEntries.some(e => e.events.includes('Спорт'))) {
+                        advice += 'Заметили, что после спорта ваше настроение улучшается. Продолжайте в том же духе! ';
+                    } else {
+                        advice += 'Физическая активность может помочь улучшить настроение. Попробуйте легкую прогулку или зарядку. ';
+                    }
+                } else if (avgMood > 70) {
+                    advice += 'Отличное настроение! Видно, что вам хорошо. Продолжайте делать то, что приносит вам радость. ';
+                } else {
+                    advice += 'Ваше настроение в норме. ';
+                }
+
+                if (avgEnergy < 40) {
+                    advice += 'Уровень энергии низкий. Обратите внимание на режим сна и питания. ';
+                }
+
+                if (lastEntries.filter(e => e.emotions.includes('Тревога')).length > 2) {
+                    advice += 'Вы часто отмечаете тревогу. Возможно, стоит обсудить это с близкими или специалистом. ';
+                }
+
+                if (advice === '') {
+                    advice = 'Ваши показатели в норме. Продолжайте наблюдать за своим состоянием!';
+                }
+
+                // Добавляем общие рекомендации
+                advice += '\n\nОбщие рекомендации: соблюдайте режим дня, пейте воду, находите время для отдыха.';
+
+                document.getElementById('ai-advice-text').textContent = advice;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

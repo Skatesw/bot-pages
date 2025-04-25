@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mood Diary</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #F8F4FF;
+}
+
+.container {
+    width: 375px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+    padding: 20px 20px 10px 20px;
+    text-align: left;
+}
+
+.header h1 {
+    font-size: 24px;
+    margin: 0;
+    font-weight: 600;
+}
+
+.calendar {
+    display: flex;
+    padding: 0 20px 15px 20px;
+    overflow-x: auto;
+    gap: 15px;
+}
+
+.day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 30px;
+}
+
+.day-name {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.day-number {
+    font-size: 16px;
+    font-weight: 500;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.day-number.today {
+    background-color: #8A4FFF;
+    color: white;
+}
+
+.check-in {
+    padding: 15px 20px;
+    border-top: 1px solid #F0F0F0;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+.check-in h2 {
+    font-size: 16px;
+    margin: 0 0 10px 0;
+    font-weight: 500;
+}
+
+.check-in-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    color: #8A4FFF;
+}
+
+.mood-chart {
+    padding: 20px;
+}
+
+.mood-chart-title {
+    font-size: 16px;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.chart-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 150px;
+    padding-bottom: 30px;
+}
+
+.chart-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 12%;
+}
+
+.chart-bar {
+    width: 100%;
+    background-color: #8A4FFF;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.chart-bar.terrible { height: 100%; background-color: #FF4F4F; }
+.chart-bar.bad { height: 75%; background-color: #FF8A4F; }
+.chart-bar.okay { height: 50%; background-color: #FFD14F; }
+.chart-bar.good { height: 25%; background-color: #8AFF4F; }
+
+.chart-time {
+    font-size: 12px;
+    color: #888;
+}
+
+.mood-details {
+    padding: 15px 20px;
+    border-top: 1px solid #F0F0F0;
+}
+
+.mood-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.mood-title h2 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.mood-title .edit {
+    color: #8A4FFF;
+    font-size: 14px;
+}
+
+.mood-emotions {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.mood-reason {
+    font-size: 14px;
+    color: #555;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 0;
+    background-color: #F8F4FF;
+    border-top: 1px solid #F0F0F0;
+}
+
+.footer-item {
+    font-size: 12px;
+    color: #888;
+}
+
+.footer-item.active {
+    color: #8A4FFF;
+    font-weight: 500;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Hey, Alexa!</h1>
+  </div>
+
+  <div class="calendar">
+    <div class="day">
+      <div class="day-name">Sun</div>
+      <div class="day-number">4</div>
+    </div>
+    <div class="day">
+      <div class="day-name">Thu</div>
+      <div class="day-number">1</div>
+    </div>
+    <div class="day">
+      <div class="day-name">Fri</div>
+      <div class="day-number">2</div>
+    </div>
+    <div class="day">
+      <div class="day-name">Sat</div>
+      <div class="day-number">3</div>
+    </div>
+    <div class="day">
+      <div class="day-name">Sun</div>
+      <div class="day-number today">4</div>
+    </div>
+    <div class="day">
+      <div class="day-name">Mon</div>
+      <div class="day-number">5</div>
+    </div>
+    <div class="day">
+      <div class="day-name">Tue</div>
+      <div class="day-number">6</div>
+    </div>
+    <div class="day">
+      <div class="day-name">Wed</div>
+      <div class="day-number">7</div>
+    </div>
+  </div>
+
+  <div class="check-in">
+    <h2>Today's check-in</h2>
+    <div class="check-in-status">Check-in 3/3</div>
+  </div>
+
+  <div class="mood-chart">
+    <h2 class="mood-chart-title">Mood chart</h2>
+    <div class="chart-container">
+      <div class="chart-column">
+        <div class="chart-bar good"></div>
+        <div class="chart-time">10:08</div>
+      </div>
+      <div class="chart-column">
+        <div class="chart-bar bad"></div>
+        <div class="chart-time">12:10</div>
+      </div>
+      <div class="chart-column">
+        <div class="chart-bar okay"></div>
+        <div class="chart-time">14:40</div>
+      </div>
+      <div class="chart-column">
+        <div class="chart-bar terrible"></div>
+        <div class="chart-time">18:30</div>
+      </div>
+      <div class="chart-column">
+        <div class="chart-bar bad"></div>
+        <div class="chart-time">20:10</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mood-details">
+    <div class="mood-title">
+      <h2>Terrible</h2>
+      <span class="edit">Edit</span>
+    </div>
+    <div class="mood-emotions">You felt Disappointed, Confused</div>
+    <div class="mood-reason">Because of Work</div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-item active">Home</div>
+    <div class="footer-item">Stats</div>
+    <div class="footer-item">Add mood</div>
+    <div class="footer-item">History</div>
+    <div class="footer-item">Setting</div>
+  </div>
+</div>
+
+</body>
+</html>

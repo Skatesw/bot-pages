@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник Эмоций</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #8a4fff;
+            --secondary-color: #ff6b6b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f4ff;
+            color: #333;
+        }
+
+        .emotion-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+
+        .emotion-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .emotion-emoji {
+            font-size: 2.5rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -30px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            border: 3px solid white;
+        }
+
+        #emotionCanvas {
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <h1 class="display-5">🌼 Дневник Эмоций</h1>
+            <p class="text-muted">Визуализируй свои чувства и настроение</p>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="emotion-card p-4 h-100">
+                    <h3>📅 Сегодня</h3>
+                    <div id="todayEmotion" class="text-center py-3">
+                        <div class="emotion-emoji">😊</div>
+                        <h4>Радостный</h4>
+                        <canvas id="emotionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="emotion-card p-4 h-100">
+                    <h3>🎯 Моя цель</h3>
+                    <div class="form-group mb-3">
+                        <textarea class="form-control" id="goalText" rows="3" placeholder="Какая у тебя цель?"></textarea>
+                    </div>
+                    <button id="analyzeGoal" class="btn btn-primary w-100">Проанализировать</button>
+                    <div id="goalAdvice" class="mt-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <strong>Совет:</strong> <span id="adviceText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="emotion-card p-4 mb-4">
+            <h3 class="mb-3">📝 Добавить запись</h3>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button class="btn btn-outline-primary w-100 py-3" data-type="text">
+                        ✏️ Текст
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button class="btn btn-outline-primary w-100 py-3" data-type="photo">
+                        📸 Фото
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button class="btn btn-outline-primary w-100 py-3" data-type="voice">
+                        🎤 Голос
+                    </button>
+                </div>
+            </div>
+
+            <div id="inputArea" style="display: none;">
+                <div class="form-group mb-3">
+                    <textarea class="form-control" id="emotionText" rows="3" placeholder="Опиши свои эмоции..."></textarea>
+                </div>
+                <button id="saveEmotion" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+
+        <div class="emotion-card p-4">
+            <h3 class="mb-4">📆 История эмоций</h3>
+            <div class="timeline" id="emotionTimeline">
+                <div class="timeline-item">
+                    <h5>День 1</h5>
+                    <p>Сегодня я чувствовал себя прекрасно!</p>
+                    <small class="text-muted">12 апреля 2023</small>
+                </div>
+                <!-- Здесь будут добавляться новые записи -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Инициализация графика эмоций
+        const ctx = document.getElementById('emotionChart').getContext('2d');
+        const emotionChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Радость', 'Грусть', 'Энергия', 'Спокойствие', 'Тревога', 'Злость'],
+                datasets: [{
+                    label: 'Эмоциональный профиль',
+                    data: [85, 20, 70, 60, 30, 15],
+                    backgroundColor: 'rgba(138, 79, 255, 0.2)',
+                    borderColor: 'rgba(138, 79, 255, 1)',
+                    pointBackgroundColor: 'rgba(138, 79, 255, 1)',
+                    pointBorderColor: '#fff',
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+
+        // Обработчики кнопок
+        document.querySelectorAll('[data-type]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const type = this.getAttribute('data-type');
+                document.getElementById('inputArea').style.display = 'block';
+
+                // Здесь можно добавить логику для разных типов ввода
+            });
+        });
+
+        // Анализ цели
+        document.getElementById('analyzeGoal').addEventListener('click', function() {
+            const goal = document.getElementById('goalText').value;
+            if (goal.trim() === '') return;
+
+            // Здесь будет запрос к API для анализа цели
+            // Покажем имитацию ответа
+            const advice = generateAdvice(goal);
+
+            document.getElementById('adviceText').textContent = advice;
+            document.getElementById('goalAdvice').style.display = 'block';
+        });
+
+        // Генерация совета (в реальном приложении это будет API запрос)
+        function generateAdvice(goal) {
+            const advices = [
+                `Для достижения "${goal}" попробуй разбить цель на маленькие шаги.`,
+                `Ты можешь достичь "${goal}", если будешь последовательным.`,
+                `Попробуй составить план для "${goal}" и отмечай прогресс.`,
+                `Для "${goal}" важно сохранять мотивацию - отмечай маленькие победы.`
+            ];
+            return advices[Math.floor(Math.random() * advices.length)];
+        }
+
+        // Сохранение эмоции
+        document.getElementById('saveEmotion').addEventListener('click', function() {
+            const text = document.getElementById('emotionText').value;
+            if (text.trim() === '') return;
+
+            // Здесь будет отправка данных на сервер
+            addTimelineEntry(text);
+            document.getElementById('emotionText').value = '';
+            document.getElementById('inputArea').style.display = 'none';
+
+            // Обновим график (в реальном приложении это будет на основе анализа текста)
+            updateChartBasedOnText(text);
+        });
+
+        // Добавление записи в историю
+        function addTimelineEntry(text) {
+            const timeline = document.getElementById('emotionTimeline');
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ru-RU');
+
+            const entry = document.createElement('div');
+            entry.className = 'timeline-item mb-3';
+            entry.innerHTML = `
+                <h5>День ${timeline.children.length + 1}</h5>
+                <p>${text}</p>
+                <small class="text-muted">${dateStr}</small>
+            `;
+
+            timeline.insertBefore(entry, timeline.firstChild);
+        }
+
+        // Обновление графика на основе текста (упрощенная версия)
+        function updateChartBasedOnText(text) {
+            // В реальном приложении здесь будет анализ текста
+            const newData = emotionChart.data.datasets[0].data.map(value => {
+                return Math.min(100, value + (Math.random() * 20 - 10));
+            });
+
+            emotionChart.data.datasets[0].data = newData;
+            emotionChart.update();
+
+            // Обновим emoji на основе анализа
+            updateEmoji(newData);
+        }
+
+        // Обновление emoji на основе данных
+        function updateEmoji(data) {
+            const joy = data[0];
+            const sadness = data[1];
+            const energy = data[2];
+
+            let emoji = '😐';
+            if (joy > 70 && energy > 60) emoji = '😊';
+            else if (joy > 60) emoji = '🙂';
+            else if (sadness > 60) emoji = '😔';
+            else if (energy > 70) emoji = '😃';
+
+            document.querySelector('#todayEmotion .emotion-emoji').textContent = emoji;
+        }
+    </script>
+</body>
+</html>
